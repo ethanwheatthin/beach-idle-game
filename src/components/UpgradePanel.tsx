@@ -10,7 +10,7 @@ const UpgradePanel: React.FC = () => {
   const { upgrades: gameUpgrades, buyUpgrade, reset } = useGameStore();
 
   return (
-    <div className="absolute bottom-0 left-0 w-full p-4 pointer-events-none select-none">
+    <div className="pointer-events-none select-none relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="pointer-events-auto bg-white/20 backdrop-blur-sm p-3 rounded-full border border-white/30 text-2xl shadow-lg active:scale-95 transition-transform"
@@ -19,13 +19,13 @@ const UpgradePanel: React.FC = () => {
       </button>
 
       {isOpen && (
-        <div className="absolute bottom-16 right-4 w-80 bg-black/80 backdrop-blur-md p-4 rounded-2xl border border-white/20 shadow-2xl pointer-events-auto animate-in slide-in-from-bottom-4 duration-300">
+        <div className="absolute bottom-16 left-0 w-80 bg-black/80 backdrop-blur-md p-4 rounded-2xl border border-white/20 shadow-2xl pointer-events-auto animate-in slide-in-from-bottom-4 duration-300">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold text-white">Upgrades</h2>
             <button onClick={() => setIsOpen(false)} className="text-white/60 hover:text-white text-2xl">&times;</button>
           </div>
 
-          <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+          <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
             {(Object.keys(upgrades) as UpgradeId[]).map((id) => (
               <UpgradeButton
                 key={id}
