@@ -1,13 +1,16 @@
 import React, { useEffect, useRef } from 'react';
 import { useGameLoop } from '../game/hooks/useGameLoop';
 import { useGameStore } from '../game/store';
+import { TrashItem } from '../game/types';
 import { renderBeach } from '../render/beach';
 import { renderTrash } from '../render/trash';
-import { renderParticles } from '../render/particles';
+import { renderParticles, renderTextParticles } from '../render/particles';
 
 const BeachCanvas: React.FC = () => {
   const canvasRef = useGameLoop();
-  const { trashItems, particles, tapTrash } = useGameStore();
+  const { tapTrash } = useGameStore();
+  // Use a ref so hover tracking never triggers React re-renders
+  const hoveredIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -27,14 +30,12 @@ const BeachCanvas: React.FC = () => {
     let animationFrameId: number;
 
     const render = () => {
-      // Access the latest state directly from the store to avoid re-running the effect
-      const { trashItems: currentTrash, particles: currentParticles } = useGameStore.getState();
-      
+      const { trashItems, particles, textParticles } = useGameStore.getState();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       renderBeach(ctx, canvas.width, canvas.height);
-      renderTrash(ctx, currentTrash);
-      renderParticles(ctx, currentParticles);
-      
+      renderTrash(ctx, trashItems, hoveredIdRef.current);
+      renderParticles(ctx, particles);
+      renderTextParticles(ctx, textParticles);
       animationFrameId = requestAnimationFrame(render);
     };
 
@@ -44,24 +45,39 @@ const BeachCanvas: React.FC = () => {
       window.removeEventListener('resize', handleResize);
       cancelAnimationFrame(animationFrameId);
     };
+  }, [canvasRef]);
 
-  }, [canvasRef]); // Only depend on canvasRef
+  /** Returns the topmost non-removing trash item under (x, y), or undefined. */
+  const getTrashAtPoint = (x: number, y: number): TrashItem | undefined => {
+    const { trashItems } = useGameStore.getState();
+    return trashItems.find((item) => {
+      if (item.isRemoving) return false;
+      const dx = item.x - x;
+      const dy = item.y - y;
+      // Hit radius = full emoji size (24–40px), minimum 22px for mobile HIG
+      return Math.sqrt(dx * dx + dy * dy) < Math.max(item.size, 22);
+    });
+  };
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
+    const clicked = getTrashAtPoint(x, y);
+    if (clicked) tapTrash(clicked.id, x, y);
+  };
 
-    // Check if a trash item was clicked
-    const clickedTrash = trashItems.find((item) => {
-      const dx = item.x - x;
-      const dy = item.y - y;
-      return Math.sqrt(dx * dx + dy * dy) < item.size / 2;
-    });
+  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const hovered = getTrashAtPoint(x, y);
+    hoveredIdRef.current = hovered?.id ?? null;
+    e.currentTarget.style.cursor = hovered ? 'pointer' : 'default';
+  };
 
-    if (clickedTrash) {
-      tapTrash(clickedTrash.id, x, y);
-    }
+  const handleMouseLeave = () => {
+    hoveredIdRef.current = null;
   };
 
   return (
@@ -69,6 +85,8 @@ const BeachCanvas: React.FC = () => {
       ref={canvasRef}
       className="block w-full h-full touch-none"
       onClick={handleCanvasClick}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
     />
   );
 };

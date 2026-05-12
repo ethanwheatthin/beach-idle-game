@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useGameStore } from '../store';
 import { createTrash } from '../spawn';
+import { getSpawnInterval } from '../economy';
 
 export function useGameLoop() {
   const { tick } = useGameStore();
@@ -22,20 +23,18 @@ export function useGameLoop() {
 
       // Handle spawning if timer reached zero
       if (state.spawnTimer <= 0) {
-        if (state.trashItems.length < 30) {
+        const nextInterval = getSpawnInterval(state.upgrades);
+        if (state.trashItems.filter(t => !t.isRemoving).length < 30) {
           if (canvasRef.current) {
             const rect = canvasRef.current.getBoundingClientRect();
             const newTrash = createTrash(rect.width, rect.height);
             useGameStore.setState((s) => ({
               trashItems: [...s.trashItems, newTrash],
-              spawnTimer: 3000, // Reset to base spawn interval
+              spawnTimer: nextInterval,
             }));
           }
         } else {
-          // Reset timer even if not spawning
-          useGameStore.setState((s) => ({
-            spawnTimer: 3000,
-          }));
+          useGameStore.setState({ spawnTimer: nextInterval });
         }
       }
 

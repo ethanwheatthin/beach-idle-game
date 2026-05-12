@@ -3,14 +3,11 @@ import { useGameStore } from '../store';
 import { saveGame } from '../save';
 
 export function useAutoSave(intervalMs: number) {
-  const state = useGameStore();
-
   useEffect(() => {
     const interval = setInterval(() => {
-      // Use the current state from the store
-      saveGame(state);
+      // Read current state at save time to avoid stale closure.
+      saveGame(useGameStore.getState());
     }, intervalMs);
-
     return () => clearInterval(interval);
-  }, [state, intervalMs]);
+  }, [intervalMs]); // intervalMs is stable; no store subscription needed
 }

@@ -32,7 +32,6 @@ const UpgradePanel: React.FC = () => {
                 id={id}
                 name={upgrades[id].name}
                 description={upgrades[id].description}
-                level={gameUpgrades[id]}
               />
             ))}
           </div>
