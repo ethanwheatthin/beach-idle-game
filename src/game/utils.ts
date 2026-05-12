@@ -1,0 +1,1 @@
+// This file is no longer needed as auto-save logic moved to src/game/hooks/useAutoSave.ts
