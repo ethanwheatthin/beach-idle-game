@@ -280,10 +280,10 @@ export const useGameStore = create<GameState & GameActions>((set, get) => {
         )
         .filter((t) => !t.isRemoving || (t.removeTimer ?? 0) > 0);
 
-      // Tick spawn-in progress on trash (0→1 over 300ms)
+      // Tick spawn-in progress on trash (0→1 over 1500ms for wash-in animation)
       const fadedTrashItems = updatedTrashItems.map((t) =>
         t.spawnProgress < 1
-          ? { ...t, spawnProgress: Math.min(1, t.spawnProgress + deltaMs / 300) }
+          ? { ...t, spawnProgress: Math.min(1, t.spawnProgress + deltaMs / 1500) }
           : t
       );
 

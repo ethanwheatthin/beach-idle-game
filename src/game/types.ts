@@ -28,8 +28,10 @@ export interface TrashItem {
   maxHits: number;
   /** Coin value awarded on final tap */
   baseValue: number;
-  /** Fade-in progress 0→1 over 300ms */
+  /** Wash-in progress 0→1 over 1500ms */
   spawnProgress: number;
+  /** Y coordinate at the waterline when this item was spawned (start of wash-in) */
+  washFromY: number;
   isRemoving?: boolean;
   removeTimer?: number;
 }

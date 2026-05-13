@@ -1,6 +1,11 @@
 import { TrashItem } from '../game/types';
 import { imageCache } from '../hooks/useAssetLoader';
 
+/** Ease-out quad — decelerates as the item settles onto the sand. */
+function easeOut(t: number): number {
+  return 1 - (1 - t) * (1 - t);
+}
+
 export function renderTrash(
   ctx: CanvasRenderingContext2D,
   trashItems: TrashItem[],
@@ -15,11 +20,21 @@ export function renderTrash(
       ? Math.max(0, (item.removeTimer ?? 0) / 80)
       : item.spawnProgress;
 
+    // Wash-in: slide from waterline to final position, with a small lateral bob
+    const washFromY = item.washFromY ?? item.y;
+    const prog = item.isRemoving ? 1 : item.spawnProgress;
+    const renderedY = prog < 1
+      ? washFromY + (item.y - washFromY) * easeOut(prog)
+      : item.y;
+    const bobX = prog < 1
+      ? Math.sin(prog * Math.PI * 3) * 5 * (1 - prog)
+      : 0;
+
     const img = imageCache.get(item.spritePath);
 
     ctx.save();
     ctx.globalAlpha = alpha;
-    ctx.translate(item.x, item.y);
+    ctx.translate(item.x + bobX, renderedY);
     ctx.rotate(item.rotation);
     ctx.scale(scale, scale);
 

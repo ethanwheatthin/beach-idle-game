@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useGameStore } from '../store';
 import { createTrash, createTreasure } from '../spawn';
 import { getSpawnInterval } from '../economy';
+import { getWaterlineY } from '../../render/beach';
 
 const MAX_TRASH = 30;
 const MAX_TREASURES = 5;
@@ -41,7 +42,8 @@ export function useGameLoop() {
           const rect = canvasRef.current.getBoundingClientRect();
           const volunteerLevel = state.upgrades['volunteer'] ?? 0;
           const rareFindsLevel = state.upgrades['rare_finds'] ?? 0;
-          const newTrash = createTrash(rect.width, rect.height, rareFindsLevel, volunteerLevel);
+          const wY = getWaterlineY(rect.height, performance.now());
+          const newTrash = createTrash(rect.width, rect.height, rareFindsLevel, volunteerLevel, wY);
           if (newTrash) {
             useGameStore.setState((s) => ({
               trashItems: [...s.trashItems, newTrash],

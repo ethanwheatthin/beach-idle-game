@@ -29,6 +29,7 @@ export function createTrash(
   canvasHeight: number,
   rareFindsLevel: number,
   volunteerLevel: number,
+  waterlineY?: number,
 ): TrashItem | null {
   const tier = pickTrashTier(rareFindsLevel);
   // 'rare_find' tier spawns a treasure, not trash — caller handles this separately
@@ -59,9 +60,10 @@ export function createTrash(
   }
 
   const spritePath = randomElement(spritePaths as string[]);
-  // Spawn in the sand area (bottom 40% of canvas)
   const x = randomRange(30, canvasWidth - 30);
-  const y = randomRange(canvasHeight * 0.62, canvasHeight - 20);
+  // Rest position safely below the waterline so items always land on visible sand
+  const minSandY = Math.max((waterlineY ?? canvasHeight * 0.60) + 30, canvasHeight * 0.67);
+  const y = randomRange(minSandY, canvasHeight - 20);
   // Random rotation -5° to +5°
   const rotation = (Math.random() - 0.5) * (Math.PI / 18);
 
@@ -78,6 +80,7 @@ export function createTrash(
     maxHits,
     baseValue,
     spawnProgress: 0,
+    washFromY: (waterlineY ?? canvasHeight * 0.60) - 5,
   };
 }
 

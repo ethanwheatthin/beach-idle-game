@@ -64,11 +64,11 @@ const BeachCanvas: React.FC = () => {
     canvas.addEventListener('touchstart', onTouchStart, { passive: false });
 
     let animationFrameId: number;
-    const render = () => {
+    const render = (time: number) => {
       const { trashItems, treasureItems, particles, textParticles } = useGameStore.getState();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.imageSmoothingEnabled = false;
-      renderBeach(ctx, canvas.width, canvas.height);
+      renderBeach(ctx, canvas.width, canvas.height, time);
       renderTreasures(ctx, treasureItems, hoveredIdRef.current, canvas.height);
       renderTrash(ctx, trashItems, hoveredIdRef.current);
       renderParticles(ctx, particles);
