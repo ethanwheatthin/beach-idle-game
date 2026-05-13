@@ -1,14 +1,29 @@
 import { TrashCategory, TreasureCategory } from '../assets/manifest';
 
-export type UpgradeId = 'volunteer' | 'bin_capacity' | 'cleanup_van' | 'spawn_rate' | 'rare_finds';
+export type UpgradeId = 'volunteer' | 'binCapacity' | 'cleanupVan' | 'spawnRate' | 'rareFinds';
 
 export interface UpgradeDefinition {
-  name: string;
+  id: UpgradeId;
+  displayName: string;
   description: string;
+  icon: string;
   baseCost: number;
-  costCurve: (level: number) => number;
+  costMultiplier: number;
   maxLevel: number;
-  effect: (level: number) => number;
+  effect: (level: number) => Record<string, number>;
+  milestones: number[];
+  milestoneTexts: Record<number, string>;
+}
+
+export interface GameStats {
+  tapPower: number;
+  coinMultiplier: number;
+  vanCount: number;
+  vanIntervalMs: number;
+  spawnIntervalMs: number;
+  rareChance: number;
+  rareMultiplier: number;
+  maxTrash: number;
 }
 
 export type TrashTier = 'common' | 'industrial';
@@ -34,6 +49,8 @@ export interface TrashItem {
   washFromY: number;
   isRemoving?: boolean;
   removeTimer?: number;
+  /** Marked true when this item is a cleanup van target */
+  isVanTarget?: boolean;
 }
 
 export interface TreasureItem {
@@ -55,6 +72,8 @@ export interface TreasureItem {
   animTimer: number;
 }
 
+export type ParticleType = 'normal' | 'golden' | 'confetti';
+
 export interface Particle {
   id: string;
   x: number;
@@ -64,6 +83,8 @@ export interface Particle {
   life: number;
   maxLife: number;
   color: string;
+  type?: ParticleType;
+  size?: number;
 }
 
 /** Floating "+N" coin text or status text that rises and fades after a tap. */
@@ -77,27 +98,55 @@ export interface TextParticle {
   life: number;
   maxLife: number;
   text: string;
+  color?: string;
+  fontSize?: number;
+}
+
+export interface VanState {
+  x: number;
+  startX: number;
+  endX: number;
+  y: number;
+  direction: 'left' | 'right';
+  progress: number;
+  pendingCoins: number;
+  targets: string[];
+  caughtIds: string[];
+}
+
+export interface MilestoneNotification {
+  upgradeId: UpgradeId;
+  level: number;
+  text: string;
 }
 
 export interface GameState {
   coins: number;
   totalTrashCleaned: number;
   upgrades: Record<UpgradeId, number>;
+  stats: GameStats;
 
   trashItems: TrashItem[];
   particles: Particle[];
   textParticles: TextParticle[];
   spawnTimer: number;
-  autoCollectTimer: number;
   lastSaveTime: number;
+
+  // Van
+  van: VanState | null;
+  vanTimer: number;
 
   // Treasures pillar
   treasureItems: TreasureItem[];
   treasureSpawnTimer: number;
   /** Collection keys of found treasures: "shell:angelWing", etc. */
   collection: Set<string>;
-  /** 0–1; derived from trash count vs max (30). Recomputed on trash change. */
+  /** 0–1; derived from trash count vs max (dynamic). Recomputed on trash change. */
   beachCleanliness: number;
+
+  // Milestones
+  unlockedMilestones: Set<string>;
+  pendingMilestone: MilestoneNotification | null;
 
   // Audio
   musicEnabled: boolean;

@@ -65,14 +65,45 @@ const BeachCanvas: React.FC = () => {
 
     let animationFrameId: number;
     const render = (time: number) => {
-      const { trashItems, treasureItems, particles, textParticles } = useGameStore.getState();
+      const { trashItems, treasureItems, particles, textParticles, van, upgrades } = useGameStore.getState();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.imageSmoothingEnabled = false;
-      renderBeach(ctx, canvas.width, canvas.height, time);
+
+      // Tide multiplier based on spawnRate level
+      const srLevel = upgrades.spawnRate ?? 0;
+      const tideMultiplier = Math.min(2.5, 1 / Math.pow(0.92, srLevel));
+
+      renderBeach(ctx, canvas.width, canvas.height, time, tideMultiplier);
       renderTreasures(ctx, treasureItems, hoveredIdRef.current, canvas.height);
       renderTrash(ctx, trashItems, hoveredIdRef.current);
       renderParticles(ctx, particles);
       renderTextParticles(ctx, textParticles);
+
+      // Render cleanup van
+      if (van) {
+        const vanLevel = upgrades.cleanupVan ?? 0;
+        const vanSize = vanLevel < 10 ? 40 : vanLevel < 20 ? 52 : 64;
+        ctx.save();
+        ctx.font = `${vanSize}px serif`;
+        ctx.textBaseline = 'middle';
+        if (van.direction === 'left') {
+          ctx.scale(-1, 1);
+          ctx.fillText('🚐', -van.x - vanSize / 2, van.y);
+        } else {
+          ctx.fillText('🚐', van.x - vanSize / 2, van.y);
+        }
+        ctx.restore();
+      }
+
+      // Render bin sprite if binCapacity >= 5
+      const binLevel = upgrades.binCapacity ?? 0;
+      if (binLevel >= 5) {
+        const binSize = binLevel >= 15 ? (binLevel >= 25 ? 64 : 48) : 32;
+        ctx.font = `${binSize}px serif`;
+        ctx.textBaseline = 'bottom';
+        ctx.fillText('🗑️', canvas.width - binSize - 12, canvas.height - 12);
+      }
+
       animationFrameId = requestAnimationFrame(render);
     };
     animationFrameId = requestAnimationFrame(render);

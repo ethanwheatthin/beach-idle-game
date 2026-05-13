@@ -4,6 +4,7 @@ import CurrencyDisplay from './CurrencyDisplay';
 import UpgradePanel from './UpgradePanel';
 import JournalModal from './JournalModal';
 import MusicPlayer from './MusicPlayer';
+import MilestoneCelebration from './MilestoneCelebration';
 import { useAssetLoader } from '../hooks/useAssetLoader';
 import { useGameStore } from '../game/store';
 
@@ -35,6 +36,9 @@ function App() {
 
       {/* Game canvas */}
       <BeachCanvas />
+
+      {/* Milestone celebration overlay */}
+      <MilestoneCelebration />
 
       {/* Top bar: coins + music toggle */}
       <div className="absolute top-0 left-0 w-full p-4 flex items-start justify-between pointer-events-none select-none">

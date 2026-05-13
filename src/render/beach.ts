@@ -67,6 +67,7 @@ function drawWaveHighlights(
   waterTop: number,
   waterBottom: number,
   t: number,
+  tideMultiplier: number,
 ) {
   const waterH = waterBottom - waterTop;
   const bands = [
@@ -83,7 +84,7 @@ function drawWaveHighlights(
     ctx.globalAlpha = b.alpha;
     ctx.beginPath();
     for (let x = 0; x <= width; x += 3) {
-      const y = baseY + Math.sin(x * b.freq + t * b.speed) * b.amp;
+      const y = baseY + Math.sin(x * b.freq + t * b.speed * tideMultiplier) * b.amp;
       x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
     }
     ctx.stroke();
@@ -96,21 +97,21 @@ function drawShoreline(
   width: number,
   waterlineY: number,
   t: number,
+  tideMultiplier: number,
 ) {
-  const maxLap = 14;
+  const maxLap = 14 + (tideMultiplier - 1) * 6; // more foam at high tide
   const fronts = [
     { lapPhase: 0,       lapSpeed: 0.55, waveFreq: 0.020, waveSpeed:  1.1, xOff:  0 },
     { lapPhase: Math.PI, lapSpeed: 0.45, waveFreq: 0.016, waveSpeed: -0.8, xOff: 80 },
   ];
   ctx.save();
   for (const f of fronts) {
-    const lap = ((Math.sin(t * f.lapSpeed + f.lapPhase) + 1) / 2) * maxLap;
-    const foamAlpha = 0.5 + Math.sin(t * f.lapSpeed + f.lapPhase) * 0.18;
+    const lap = ((Math.sin(t * f.lapSpeed * tideMultiplier + f.lapPhase) + 1) / 2) * maxLap;
+    const foamAlpha = 0.5 + Math.sin(t * f.lapSpeed * tideMultiplier + f.lapPhase) * 0.18;
 
-    // Wet sheen fill on sand
     ctx.beginPath();
     for (let x = 0; x <= width; x += 3) {
-      const y = waterlineY - lap + Math.sin((x + f.xOff) * f.waveFreq + t * f.waveSpeed) * 5;
+      const y = waterlineY - lap + Math.sin((x + f.xOff) * f.waveFreq + t * f.waveSpeed * tideMultiplier) * 5;
       x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
     }
     ctx.lineTo(width, waterlineY + 8);
@@ -122,10 +123,9 @@ function drawShoreline(
     ctx.fillStyle = grad;
     ctx.fill();
 
-    // White foam edge
     ctx.beginPath();
     for (let x = 0; x <= width; x += 3) {
-      const y = waterlineY - lap + Math.sin((x + f.xOff) * f.waveFreq + t * f.waveSpeed) * 5;
+      const y = waterlineY - lap + Math.sin((x + f.xOff) * f.waveFreq + t * f.waveSpeed * tideMultiplier) * 5;
       x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
     }
     ctx.strokeStyle = `rgba(255,255,255,${foamAlpha})`;
@@ -157,7 +157,13 @@ function drawSandSparkles(
 
 // ── Public render function ───────────────────────────────────────────────────
 
-export function renderBeach(ctx: CanvasRenderingContext2D, width: number, height: number, time = 0) {
+export function renderBeach(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  time = 0,
+  tideMultiplier = 1,
+) {
   const t = time / 1000;
   const waterlineY = getWaterlineY(height, time);
 
@@ -168,26 +174,19 @@ export function renderBeach(ctx: CanvasRenderingContext2D, width: number, height
   ctx.fillStyle = skyGradient;
   ctx.fillRect(0, 0, width, height * 0.3);
 
-  // Sand drawn first — water will cover the top slice as tide changes
   const sandTop = Math.floor(height * SAND_FIXED_TOP);
   const sandH = height - sandTop;
   ctx.fillStyle = '#F4A460';
   ctx.fillRect(0, sandTop, width, sandH);
   ctx.drawImage(getSandTexture(width, sandH), 0, sandTop);
 
-  // Water (gradient fills from sky-bottom down to the live waterline)
   const waterGradient = ctx.createLinearGradient(0, height * 0.3, 0, waterlineY);
   waterGradient.addColorStop(0, '#1E90FF');
   waterGradient.addColorStop(1, '#00008B');
   ctx.fillStyle = waterGradient;
   ctx.fillRect(0, height * 0.3, width, waterlineY - height * 0.3);
 
-  // Wave highlights on water surface
-  drawWaveHighlights(ctx, width, height * 0.3, waterlineY, t);
-
-  // Shoreline foam at the live tide edge
-  drawShoreline(ctx, width, waterlineY, t);
-
-  // Sparkles only on the visible sand below the tide
+  drawWaveHighlights(ctx, width, height * 0.3, waterlineY, t, tideMultiplier);
+  drawShoreline(ctx, width, waterlineY, t, tideMultiplier);
   drawSandSparkles(ctx, width, waterlineY, height - waterlineY, t);
 }
